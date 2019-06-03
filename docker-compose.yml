@@ -1,0 +1,43 @@
+version: "2.4"
+services:
+  consul:
+    container_name: consul
+    image: consul:1.4.0
+    command: consul agent -dev -recursor=8.8.8.8 -client 0.0.0.0
+    environment:
+      - CONSUL_ALLOW_PRIVILEGED_PORTS
+    ports:
+      - "8500:8500"
+      - "53:8600/udp"
+  
+  registrator:
+    command: -internal consul://consul:8500
+    image: gliderlabs/registrator:v7
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock"
+    links:
+      - consul
+
+  service1: 
+    build: .
+    ports:
+     - "8081:8080"
+    environment:
+    - SERVICE_NAME=service1
+    - INDEKS=pierwszy
+    dns: 
+    - consul
+    depends_on:
+    - consul
+  
+  service2: 
+    build: .
+    ports:
+     - "8082:8080"
+    environment:
+    - SERVICE_NAME=service1
+    - INDEKS=drugi
+    dns: 
+    - consul
+    depends_on:
+    - consul
